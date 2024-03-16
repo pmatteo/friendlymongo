@@ -108,7 +108,7 @@ func (r *BaseRepository[T]) Find(ctx context.Context, filter interface{}) ([]T, 
 	return documents, nil
 }
 
-// FindOneAndUpdate finds a single document and updates it.
+// UpdateOne finds a single document and updates it.
 // The update parameter must be a bson.M or a struct that implements the Model interface.
 func (r *BaseRepository[T]) UpdateOne(ctx context.Context, filters interface{}, update interface{}) (T, error) {
 	var document T
@@ -159,7 +159,7 @@ func (r *BaseRepository[T]) Aggregate(ctx context.Context, pipeline mongo.Pipeli
 	return cursor.All(ctx, result)
 }
 
-// FindOneReplaceOne replaces a single document in the collection.
+// ReplaceOne replaces a single document in the collection.
 // Replaced document must have the same ID as the one being replaced or not have it serializible at all. It is
 // strongly suggested to have the ID field with the `omitempty` bson tag in case of structs.
 func (r *BaseRepository[Model]) ReplaceOne(ctx context.Context, filter interface{}, replacement Model) error {
