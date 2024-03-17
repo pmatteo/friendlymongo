@@ -12,8 +12,7 @@ import (
 
 // MongoClient is a struct to manage the database connection
 type MongoClient struct {
-	client      *mongo.Client
-	initialized bool
+	client *mongo.Client
 }
 
 var (
@@ -39,7 +38,7 @@ func SetInstance(uri string) *MongoClient {
 			panic(err)
 		}
 
-		instance = &MongoClient{client: c, initialized: true}
+		instance = &MongoClient{client: c}
 	})
 
 	return instance

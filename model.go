@@ -9,23 +9,10 @@ import (
 // Ensure BaseModel implements the Model interface
 var _ Model = &BaseModel{}
 
-type getters interface {
-	GetID() primitive.ObjectID
-	GetCreatedAt() time.Time
-	GetUpdateAt() time.Time
-}
-
-type setters interface {
-	SetID()
-	UnsetID()
-	SetUpdatedAt()
-	SetCreatedAt()
-}
-
 type Model interface {
-	getters
-	setters
-	Init()
+	OnCreate()
+	OnUpdate()
+	OnReplace()
 }
 
 type BaseModel struct {
@@ -38,51 +25,47 @@ type BaseModel struct {
 }
 
 func NewBaseModel() *BaseModel {
+	now := time.Now()
 
-	m := &BaseModel{}
-	m.Init()
-
-	return m
+	return &BaseModel{
+		ID:        primitive.NewObjectID(),
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 }
 
-func (b *BaseModel) GetID() primitive.ObjectID {
+func (b *BaseModel) OnCreate() {
+	if b.ID.IsZero() {
+		b.setID(primitive.NewObjectID())
+	}
 
-	return b.ID
+	b.setCreatedAt()
+	b.setUpdatedAt()
 }
 
-func (b *BaseModel) UnsetID() {
+func (b *BaseModel) OnReplace() {
 
-	b.ID = primitive.NilObjectID
+	b.setID(primitive.NilObjectID)
+	b.setUpdatedAt()
 }
 
-func (b *BaseModel) GetCreatedAt() time.Time {
+func (b *BaseModel) OnUpdate() {
 
-	return b.CreatedAt
+	b.setID(primitive.NilObjectID)
+	b.setUpdatedAt()
 }
 
-func (b *BaseModel) GetUpdateAt() time.Time {
+func (b *BaseModel) setID(id primitive.ObjectID) {
 
-	return b.UpdatedAt
+	b.ID = id
 }
 
-func (b *BaseModel) SetID() {
-
-	b.ID = primitive.NewObjectID()
-}
-
-func (b *BaseModel) SetUpdatedAt() {
+func (b *BaseModel) setUpdatedAt() {
 
 	b.UpdatedAt = time.Now()
 }
 
-func (b *BaseModel) SetCreatedAt() {
+func (b *BaseModel) setCreatedAt() {
 
 	b.CreatedAt = time.Now()
-}
-
-func (b *BaseModel) Init() {
-
-	b.SetID()
-	b.SetCreatedAt()
-	b.SetUpdatedAt()
 }
