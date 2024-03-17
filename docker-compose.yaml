@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mongodb5:
+    image: mongo:5.0.25
+    container_name: mongodb5
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=toor
+      - MONGO_INITDB_DATABASE=testDatabase
+    ports:
+      - '27010:27017'
+
+  mongodb6:
+    image: mongo:6-jammy
+    container_name: mongodb6
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=toor
+      - MONGO_INITDB_DATABASE=testDatabase
+    ports:
+      - '27011:27017'
+  
+  mongodb7:
+    image: mongo:7-jammy
+    container_name: mongodb7
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=toor
+      - MONGO_INITDB_DATABASE=testDatabase
+    ports:
+      - '27012:27017'

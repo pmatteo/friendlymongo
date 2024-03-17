@@ -1,0 +1,88 @@
+name: Perform code analysis and run tests
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  code-check:
+    runs-on: ubuntu-latest
+    
+    if: github.event.pull_request.draft == false
+
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout v4
+        uses: actions/checkout@v4
+
+      - name: Go setup v4
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.22
+          check-latest: true
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run go vet
+        run: go mod verify
+      
+      - name: Run staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...
+      
+      - name: Run govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+    
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          install-mode: binary
+          version: latest
+          only-new-issues: true
+          working-directory: ./
+          args: --timeout=30m
+
+  tests:
+    runs-on: ubuntu-latest
+    
+    if: github.event.pull_request.draft == false
+    
+    timeout-minutes: 3
+    
+    strategy:
+      matrix:
+        go-version: ["1.18","1.22"]
+        mongo-version: ["5.0.25", "6-jammy", "7-jammy"]
+    
+    services:
+      mongodb:
+        image: mongo:${{ matrix.mongo-version }}
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: toor
+          MONGO_INITDB_DATABASE: testDatabase
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout v4
+        uses: actions/checkout@v4
+
+      - name: Go setup v4
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
+
+      - name: Run tests
+        run: |
+          go test -v -race -buildvcs -uri='mongodb://root:toor@localhost:27017' -timeout 30s -vet=off -v  ./...
