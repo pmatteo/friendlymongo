@@ -35,8 +35,6 @@ func TestMain(m *testing.M) {
 
 	flag.Parse()
 
-	fmt.Println("Setting up database connection with uri ", uri)
-
 	if friendlymongo.GetInstance() != nil {
 		panic("Instance already set")
 	}
