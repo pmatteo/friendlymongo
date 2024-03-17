@@ -17,9 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     
     if: github.event.pull_request.draft == false
-    strategy:
-      matrix:
-        go-version: ["1.18", "1.22"]
 
     timeout-minutes: 3
 
@@ -30,7 +27,7 @@ jobs:
       - name: Go setup v4
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.22
           check-latest: true
 
       - name: Verify dependencies
@@ -53,3 +50,39 @@ jobs:
           only-new-issues: true
           working-directory: ./
           args: --timeout=30m
+
+  tests:
+    runs-on: ubuntu-latest
+    
+    if: github.event.pull_request.draft == false
+    
+    timeout-minutes: 3
+    
+    strategy:
+      matrix:
+        go-version: ["1.18","1.22"]
+        mongo-version: ["5.0.25", "6-jammy", "7-jammy"]
+    
+    services:
+      mongodb:
+        image: mongo:${{ matrix.mongo-version }}
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: toor
+          MONGO_INITDB_DATABASE: testDatabase
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout v4
+        uses: actions/checkout@v4
+
+      - name: Go setup v4
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
+
+      - name: Run tests
+        run: |
+          go test -v -race -buildvcs -uri='mongodb://root:toor@localhost:27017' -timeout 30s -vet=off -v  ./...
