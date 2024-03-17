@@ -6,11 +6,10 @@ import (
 
 	"github.com/pmatteo/friendlymongo"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func TestBaseModel_Init(t *testing.T) {
+func TestBaseModel_OnCreate(t *testing.T) {
 	t.Parallel()
 
 	model := &friendlymongo.BaseModel{}
@@ -19,42 +18,55 @@ func TestBaseModel_Init(t *testing.T) {
 	assert.Empty(t, model.CreatedAt)
 	assert.Empty(t, model.UpdatedAt)
 
-	model.Init()
+	model.OnCreate()
 
 	assert.False(t, model.ID.IsZero())
 	assert.NotEmpty(t, model.CreatedAt)
 	assert.NotEmpty(t, model.UpdatedAt)
 }
 
-func TestBaseModel_Setters(t *testing.T) {
+func TestBaseModel_OnUpdate(t *testing.T) {
 	t.Parallel()
 
-	model := &friendlymongo.BaseModel{}
+	tm := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	id := primitive.NewObjectID()
+	model := &friendlymongo.BaseModel{
+		ID:        id,
+		CreatedAt: tm,
+		UpdatedAt: tm,
+	}
 
-	assert.True(t, model.ID.IsZero())
-	assert.Empty(t, model.CreatedAt)
-	assert.Empty(t, model.UpdatedAt)
+	assert.Equal(t, id, model.ID)
+	assert.Equal(t, tm, model.CreatedAt)
+	assert.Equal(t, tm, model.UpdatedAt)
 
-	model.SetID()
+	model.OnUpdate()
 
-	assert.False(t, model.ID.IsZero())
-
-	model.SetCreatedAt()
-	assert.NotEmpty(t, model.CreatedAt)
-
-	model.SetUpdatedAt()
-	assert.NotEmpty(t, model.UpdatedAt)
+	assert.Equal(t, primitive.NilObjectID, model.ID)
+	assert.Equal(t, tm, model.CreatedAt)
+	assert.NotEqual(t, tm, model.UpdatedAt)
 }
 
-func TestBaseModel_Getters(t *testing.T) {
+func TestBaseModel_OnReplace(t *testing.T) {
 	t.Parallel()
 
-	model := friendlymongo.NewBaseModel()
+	tm := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	id := primitive.NewObjectID()
+	model := &friendlymongo.BaseModel{
+		ID:        id,
+		CreatedAt: tm,
+		UpdatedAt: tm,
+	}
 
-	require.NotNil(t, model.GetID())
-	assert.NotEqual(t, primitive.NilObjectID, model.GetID())
-	assert.NotEmpty(t, model.GetUpdateAt())
-	assert.NotEmpty(t, model.GetCreatedAt())
+	assert.Equal(t, id, model.ID)
+	assert.Equal(t, tm, model.CreatedAt)
+	assert.Equal(t, tm, model.UpdatedAt)
+
+	model.OnReplace()
+
+	assert.Equal(t, primitive.NilObjectID, model.ID)
+	assert.Equal(t, tm, model.CreatedAt)
+	assert.NotEqual(t, tm, model.UpdatedAt)
 }
 
 type address struct {
@@ -81,7 +93,7 @@ type otherModel struct {
 	Permissions []string `bson:"permissions"`
 }
 
-func NewCustomModel(name, email string, active bool, a *address) *customModel {
+func newCustomModel(name, email string, active bool, a *address) *customModel {
 	m := &customModel{
 		Name:    name,
 		Email:   email,
@@ -96,60 +108,53 @@ func NewCustomModel(name, email string, active bool, a *address) *customModel {
 	return m
 }
 
-// TestCustomModel_Init tests that the Init method sets the BaseModel fields
-// if they are not already set.
-func TestCustomModel_Init(t *testing.T) {
+func TestCustomModel_OnCreate(t *testing.T) {
 
 	t.Parallel()
 
-	now := time.Now()
-
-	model := &customModel{
-		Name:           "John Doe",
-		Email:          "johndoe@test.com",
-		Active:         true,
-		ActivationDate: &now,
-		Address:        basicAddress,
-	}
+	model := newCustomModel("John Doe", "test@test", true, basicAddress)
 
 	assert.True(t, model.ID.IsZero())
 	assert.Empty(t, model.CreatedAt)
 	assert.Empty(t, model.UpdatedAt)
 
-	model.Init()
+	model.OnCreate()
 
 	assert.NotEqual(t, primitive.NilObjectID, model.ID)
 	assert.NotEmpty(t, model.CreatedAt)
 	assert.NotEmpty(t, model.UpdatedAt)
 }
 
-// TestCustomModel_Setters tests that the Init method does not
-// override the BaseModel fields if they are already set.
-func TestCustomModel_Setters(t *testing.T) {
+func TestCustomModel_OnUpdate(t *testing.T) {
 
 	t.Parallel()
 
-	now := time.Now()
+	model := newCustomModel("John Doe", "test@test", true, basicAddress)
+	model.OnCreate()
 
-	model := &customModel{
-		Name:           "John Doe",
-		Email:          "johndoe@test.com",
-		Active:         true,
-		ActivationDate: &now,
-		Address:        basicAddress,
-	}
+	createdAt := model.CreatedAt
+	updatedAt := model.UpdatedAt
+
+	model.OnUpdate()
 
 	assert.True(t, model.ID.IsZero())
-	assert.Empty(t, model.CreatedAt)
-	assert.Empty(t, model.UpdatedAt)
+	assert.Equal(t, createdAt, model.CreatedAt)
+	assert.NotEqual(t, updatedAt, model.UpdatedAt)
+}
 
-	model.SetID()
+func TestCustomModel_OnReplace(t *testing.T) {
 
-	assert.False(t, model.ID.IsZero())
+	t.Parallel()
 
-	model.SetCreatedAt()
-	assert.NotEmpty(t, model.CreatedAt)
+	model := newCustomModel("John Doe", "test@test", true, basicAddress)
+	model.OnCreate()
 
-	model.SetUpdatedAt()
-	assert.NotEmpty(t, model.UpdatedAt)
+	createdAt := model.CreatedAt
+	updatedAt := model.UpdatedAt
+
+	model.OnReplace()
+
+	assert.True(t, model.ID.IsZero())
+	assert.Equal(t, createdAt, model.CreatedAt)
+	assert.NotEqual(t, updatedAt, model.UpdatedAt)
 }

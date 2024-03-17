@@ -54,7 +54,7 @@ func NewBaseRepository[T Model](db *mongo.Database, collectionName string, t T) 
 //
 // The document parameter must be a pointer to a struct that implements the Model interface.
 func (r *BaseRepository[T]) InsertOne(ctx context.Context, document T) error {
-	document.Init()
+	document.OnCreate()
 
 	_, err := r.collection.InsertOne(ctx, document)
 	return err
@@ -65,9 +65,7 @@ func (r *BaseRepository[T]) InsertMany(ctx context.Context, documents []T) error
 
 	var interfaceSlice = make([]interface{}, len(documents))
 	for i, d := range documents {
-		if d.GetID().IsZero() {
-			d.Init()
-		}
+		d.OnCreate()
 
 		interfaceSlice[i] = d
 	}
@@ -116,8 +114,7 @@ func (r *BaseRepository[T]) UpdateOne(ctx context.Context, filters interface{}, 
 
 	switch u := update.(type) {
 	case T:
-		u.SetUpdatedAt()
-		u.UnsetID()
+		u.OnUpdate()
 		updateQuery = bson.M{"$set": u}
 	case bson.M:
 		u["$currentDate"] = bson.M{"updatedAt": true}
@@ -164,8 +161,7 @@ func (r *BaseRepository[T]) Aggregate(ctx context.Context, pipeline mongo.Pipeli
 // strongly suggested to have the ID field with the `omitempty` bson tag in case of structs.
 func (r *BaseRepository[Model]) ReplaceOne(ctx context.Context, filter interface{}, replacement Model) error {
 
-	replacement.SetUpdatedAt()
-	replacement.UnsetID()
+	replacement.OnReplace()
 
 	singleRes := r.collection.FindOneAndReplace(ctx, filter, replacement)
 	if singleRes.Err() != nil {
