@@ -404,7 +404,8 @@ func TestAggregate_SortByCount(t *testing.T) {
 	var result []struct {
 		Count int `bson:"count"`
 	}
-	repo.Aggregate(context.Background(), pipeline, &result)
+	err = repo.Aggregate(context.Background(), pipeline, &result)
+	require.NoError(t, err)
 
 	require.Len(t, result, 2)
 	assert.Equal(t, result[0].Count, 2)
@@ -471,5 +472,6 @@ func TestAggregate_Facet(t *testing.T) {
 		} `bson:"categorizedByPrice"`
 	}
 
-	artworksRepo.Aggregate(context.Background(), pipeline.Build(), &result)
+	err := artworksRepo.Aggregate(context.Background(), pipeline.Build(), &result)
+	require.NoError(t, err)
 }

@@ -108,5 +108,8 @@ func initArtwork() {
 		},
 	}
 
-	artworksRepo.InsertMany(context.Background(), artworks)
+	err := artworksRepo.InsertMany(context.Background(), artworks)
+	if err != nil {
+		fmt.Println("Error inserting documents:", err)
+	}
 }
