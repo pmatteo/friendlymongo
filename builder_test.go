@@ -92,12 +92,7 @@ func TestAggregationBuilder_Build(t *testing.T) {
 		NewStageBuilder().
 		Match("a", bson.M{"test": bson.M{"$eq": 1}}).
 		Append("a", bson.M{"test2": bson.M{"$lt": 2}}).
-		Lookup("b", bson.M{
-			"from":         "otherCollection",
-			"localField":   "id",
-			"foreignField": "fkId",
-			"as":           "other",
-		})
+		Lookup("b", "otherCollection", "id", "fkId", "other")
 
 	build := builder.Build()
 	require.Len(t, build, 2)
