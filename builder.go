@@ -56,9 +56,9 @@ func (pb *StageBuilder) Match(id string, filters interface{}) *StageBuilder {
 	return pb.AddStage(id, "$match", filters)
 }
 
-// Categorizes incoming documents into groups, called buckets, based on a specified expression and bucket boundaries
-// and outputs a document per each bucket. Each output document contains an _id field whose value specifies the
-// inclusive lower bound of the bucket.
+// Bucket categorizes incoming documents into groups, called buckets, based on a specified expression and bucket
+// boundaries and outputs a document per each bucket. Each output document contains an _id field whose value specifies
+// the inclusive lower bound of the bucket.
 // The output option specifies the fields included in each output document.
 //
 // $bucket only produces output documents for buckets that contain at least one input document.
