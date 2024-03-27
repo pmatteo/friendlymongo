@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/pmatteo/friendlymongo"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var uri string
@@ -15,6 +14,7 @@ var testDB string
 var testCollection string
 
 var repo *friendlymongo.BaseRepository[*customModel]
+var artworksRepo *friendlymongo.BaseRepository[*artwork]
 
 func newCustomModelRepo() *friendlymongo.BaseRepository[*customModel] {
 	i := friendlymongo.GetInstance()
@@ -26,6 +26,12 @@ func newOtherModelRepo() *friendlymongo.BaseRepository[*otherModel] {
 	i := friendlymongo.GetInstance()
 
 	return friendlymongo.NewBaseRepository(i.Database(testDB), "otherCollection", new(otherModel))
+}
+
+func newArtworkRepo() *friendlymongo.BaseRepository[*artwork] {
+	i := friendlymongo.GetInstance()
+
+	return friendlymongo.NewBaseRepository(i.Database(testDB), "artwork", new(artwork))
 }
 
 func TestMain(m *testing.M) {
@@ -48,6 +54,9 @@ func TestMain(m *testing.M) {
 	defer cleanUp()
 
 	repo = newCustomModelRepo()
+	artworksRepo = newArtworkRepo()
+
+	initArtwork()
 
 	m.Run()
 }
@@ -56,7 +65,7 @@ func cleanUp() {
 	i := friendlymongo.GetInstance()
 
 	// CleanUp database
-	_, err := i.Database(testDB).Collection(testCollection).DeleteMany(context.Background(), bson.D{})
+	err := i.Database(testDB).Drop(context.Background())
 	if err != nil {
 		fmt.Println("Error deleting documents:", err)
 		return
@@ -68,5 +77,39 @@ func disconnect() {
 	err := i.Disconnect()
 	if err != nil {
 		fmt.Println("Error disconnecting from database:", err)
+	}
+}
+
+func initArtwork() {
+	var artworks = []*artwork{
+		{
+			Title: "The Pillars of Society", Artist: "Grosz", Year: 1926, Price: 199.99,
+			Tags: []string{"painting", "satire", "Expressionism", "caricature"},
+		},
+		{
+			Title: "Melancholy III", Artist: "Munch", Year: 1902, Price: 280.00,
+			Tags: []string{"woodcut", "Expressionism"},
+		},
+		{
+			Title: "Dancer", Artist: "Miro", Year: 1925, Price: 76.04,
+			Tags: []string{"oil", "Surrealism", "painting"},
+		},
+		{
+			Title: "The Great Wave off Kanagawa", Artist: "Hokusai", Price: 167.30,
+			Tags: []string{"woodblock", "ukiyo-e"},
+		},
+		{
+			Title: "The Persistence of Memory", Artist: "Dali", Year: 1931, Price: 483.00,
+			Tags: []string{"Surrealism", "painting", "oil"},
+		},
+		{
+			Title: "Composition VII", Artist: "Kandinsky", Year: 1913, Price: 385.00,
+			Tags: []string{"oil", "painting", "abstract"},
+		},
+	}
+
+	err := artworksRepo.InsertMany(context.Background(), artworks)
+	if err != nil {
+		fmt.Println("Error inserting documents:", err)
 	}
 }

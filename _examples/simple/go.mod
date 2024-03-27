@@ -1,4 +1,4 @@
-module github.com/pmatteo/friendlymongo/example/simple
+module github.com/pmatteo/friendlymongo/_example/simple
 
 go 1.22
 
