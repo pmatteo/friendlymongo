@@ -454,19 +454,19 @@ func TestAggregate_Facet(t *testing.T) {
 		Facet("stg1", map[string]*fm.StageBuilder{
 			"categorizedByTags": fm.NewStageBuilder().Unwind("stg1", "$tags").SortByCount("stg2", "$tags"),
 			"categorizedByPrice": fm.NewStageBuilder().
-				Match("stg1", bson.M{"price": bson.M{"$exist": true}}).
+				Match("stg1", bson.M{"price": bson.M{"$exists": true}}).
 				Bucket("stg2", "$price", []any{0, 150, 200, 300, 400}, "Other", bson.M{
 					"count":  bson.M{"$sum": 1},
 					"titles": bson.M{"$push": "$title"},
 				}),
 		})
 
-	var result struct {
+	var result []struct {
 		CategorizedByTags []struct {
 			ID string `bson:"_id"`
 		} `bson:"categorizedByTags"`
 		CategorizedByPrice []struct {
-			ID     string   `bson:"_id"`
+			ID     any      `bson:"_id"`
 			Count  int      `bson:"count"`
 			Titles []string `bson:"titles"`
 		} `bson:"categorizedByPrice"`
@@ -474,4 +474,8 @@ func TestAggregate_Facet(t *testing.T) {
 
 	err := artworksRepo.Aggregate(context.Background(), pipeline.Build(), &result)
 	require.NoError(t, err)
+
+	require.Len(t, result, 1)
+	assert.Len(t, result[0].CategorizedByTags, 10)
+	assert.Len(t, result[0].CategorizedByPrice, 5)
 }
