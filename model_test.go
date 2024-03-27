@@ -93,6 +93,16 @@ type otherModel struct {
 	Permissions []string `bson:"permissions"`
 }
 
+type artwork struct {
+	friendlymongo.BaseModel `bson:",inline"`
+
+	Title  string   `bson:"title"`
+	Artist string   `bson:"artist"`
+	Year   int      `bson:"year,omitempty"`
+	Price  float32  `bson:"price"`
+	Tags   []string `bson:"tags"`
+}
+
 func newCustomModel(name, email string, active bool, a *address) *customModel {
 	m := &customModel{
 		Name:    name,

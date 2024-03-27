@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pmatteo/friendlymongo"
+	fm "github.com/pmatteo/friendlymongo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -249,7 +249,7 @@ func TestAggregate_WithBuilder(t *testing.T) {
 	err := repo.InsertMany(context.Background(), models)
 	require.NoError(t, err)
 
-	pipeline := friendlymongo.
+	pipeline := fm.
 		NewStageBuilder().
 		Match("stg1", bson.M{"active": false}).
 		Append("stg1", bson.M{"email": bson.M{"$regex": "^aggregate_builder.*"}}).
@@ -281,7 +281,7 @@ func TestAggregate_Count(t *testing.T) {
 	err := repo.InsertMany(context.Background(), models)
 	require.NoError(t, err)
 
-	pipeline := friendlymongo.
+	pipeline := fm.
 		NewStageBuilder().
 		Match("stg1", bson.M{"active": false}).
 		Match("stg2", bson.M{"name": bson.M{"$regex": ".*count.*"}}).
@@ -330,15 +330,10 @@ func TestAggregate_LookupOtherCollection(t *testing.T) {
 	err = otherRepo.InsertMany(context.Background(), otherModels)
 	require.NoError(t, err)
 
-	pipeline := friendlymongo.
+	pipeline := fm.
 		NewStageBuilder().
 		Match("stg1", bson.M{"name": bson.M{"$regex": "^aggregate lookup.*"}}).
-		Lookup("stg2", bson.M{
-			"from":         "otherCollection",
-			"localField":   "_id",
-			"foreignField": "fk",
-			"as":           "other",
-		}).
+		Lookup("stg2", "otherCollection", "_id", "fk", "other").
 		Match("stg3", bson.M{"other.group": "admin"}).
 		Build()
 
@@ -354,4 +349,133 @@ func TestAggregate_LookupOtherCollection(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, result, 2)
+}
+
+func TestAggregate_Unwind(t *testing.T) {
+
+	t.Parallel()
+
+	var otherRepo = newOtherModelRepo()
+	otherModels := []*otherModel{
+		{
+			FK:          primitive.NewObjectID(),
+			Group:       "admin unwind",
+			Permissions: []string{"read", "write"},
+		},
+	}
+
+	err := otherRepo.InsertMany(context.Background(), otherModels)
+	require.NoError(t, err)
+
+	pipeline := fm.
+		NewStageBuilder().
+		Match("stg1", bson.M{"group": bson.M{"$regex": ".*unwind.*"}}).
+		Unwind("stgw", "$permissions").
+		Build()
+
+	var result []struct {
+		Permission string             `bson:"permissions"`
+		FK         primitive.ObjectID `bson:"fk"`
+		Group      string             `bson:"group"`
+	}
+
+	err = otherRepo.Aggregate(context.Background(), pipeline, &result)
+	require.NoError(t, err)
+
+	require.Len(t, result, 2)
+}
+
+func TestAggregate_SortByCount(t *testing.T) {
+
+	t.Parallel()
+
+	models := []*customModel{
+		newCustomModel("aggregate sortByCount 1", "sortByCount1@test.com", false, basicAddress),
+		newCustomModel("aggregate sortByCount 2", "sortByCount2@test.com", false, basicAddress),
+		newCustomModel("aggregate sortByCount 3", "sortByCount3@test.com", true, basicAddress),
+	}
+	err := repo.InsertMany(context.Background(), models)
+	require.NoError(t, err)
+
+	pipeline := fm.NewStageBuilder().
+		Match("stg1", bson.M{"email": bson.M{"$regex": ".*sortByCount.*"}}).
+		SortByCount("stg2", "$active").Build()
+
+	var result []struct {
+		Count int `bson:"count"`
+	}
+	err = repo.Aggregate(context.Background(), pipeline, &result)
+	require.NoError(t, err)
+
+	require.Len(t, result, 2)
+	assert.Equal(t, result[0].Count, 2)
+	assert.Equal(t, result[1].Count, 1)
+}
+
+func TestAggregate_Bucket(t *testing.T) {
+
+	t.Parallel()
+
+	pipeline := fm.
+		NewStageBuilder().
+		Bucket("stg1", "$year", []any{1900, 1910, 1920, 1930, 1940}, "other", bson.M{
+			"count": bson.M{"$sum": 1},
+		})
+
+	var result []struct {
+		ID    any `bson:"_id"`
+		Count int `bson:"count"`
+	}
+
+	err := artworksRepo.Aggregate(context.Background(), pipeline.Build(), &result)
+	require.NoError(t, err)
+
+	require.Len(t, result, 5)
+
+	assert.Equal(t, int32(1900), result[0].ID)
+	assert.Equal(t, 1, result[0].Count)
+	assert.Equal(t, int32(1910), result[1].ID)
+	assert.Equal(t, 1, result[1].Count)
+	assert.Equal(t, int32(1920), result[2].ID)
+	assert.Equal(t, 2, result[2].Count)
+	assert.Equal(t, int32(1930), result[3].ID)
+	assert.Equal(t, 1, result[3].Count)
+	assert.Equal(t, "other", result[4].ID)
+	assert.Equal(t, 1, result[4].Count)
+
+}
+
+func TestAggregate_Facet(t *testing.T) {
+
+	t.Parallel()
+
+	pipeline := fm.
+		NewStageBuilder().
+		Facet("stg1", map[string]*fm.StageBuilder{
+			"categorizedByTags": fm.NewStageBuilder().Unwind("stg1", "$tags").SortByCount("stg2", "$tags"),
+			"categorizedByPrice": fm.NewStageBuilder().
+				Match("stg1", bson.M{"price": bson.M{"$exists": true}}).
+				Bucket("stg2", "$price", []any{0, 150, 200, 300, 400}, "Other", bson.M{
+					"count":  bson.M{"$sum": 1},
+					"titles": bson.M{"$push": "$title"},
+				}),
+		})
+
+	var result []struct {
+		CategorizedByTags []struct {
+			ID string `bson:"_id"`
+		} `bson:"categorizedByTags"`
+		CategorizedByPrice []struct {
+			ID     any      `bson:"_id"`
+			Count  int      `bson:"count"`
+			Titles []string `bson:"titles"`
+		} `bson:"categorizedByPrice"`
+	}
+
+	err := artworksRepo.Aggregate(context.Background(), pipeline.Build(), &result)
+	require.NoError(t, err)
+
+	require.Len(t, result, 1)
+	assert.Len(t, result[0].CategorizedByTags, 10)
+	assert.Len(t, result[0].CategorizedByPrice, 5)
 }
