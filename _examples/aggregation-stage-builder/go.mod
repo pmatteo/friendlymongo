@@ -3,7 +3,7 @@ module github.com/pmatteo/friendlymongo/_example/aggregation-stage-builder
 go 1.22
 
 require (
-	github.com/pmatteo/friendlymongo v0.1.0
+	github.com/pmatteo/friendlymongo v0.2.0
 	go.mongodb.org/mongo-driver v1.14.0
 )
 

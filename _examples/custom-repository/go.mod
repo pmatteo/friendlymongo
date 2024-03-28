@@ -3,7 +3,7 @@ module github.com/pmatteo/friendlymongo/_example/custom-repo
 go 1.22
 
 require (
-	github.com/pmatteo/friendlymongo v0.0.0-20240317120251-e9158c05b4ac
+	github.com/pmatteo/friendlymongo v0.2.0
 	go.mongodb.org/mongo-driver v1.14.0
 )
 

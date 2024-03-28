@@ -10,6 +10,10 @@ github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe h1:iruDEfMl2E6f
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
 github.com/pmatteo/friendlymongo v0.0.0-20240317120251-e9158c05b4ac h1:rZIXT5itoGUJFdqGjHY2DABcn1w3hXe1o97qISGHYUg=
 github.com/pmatteo/friendlymongo v0.0.0-20240317120251-e9158c05b4ac/go.mod h1:JvuI96ywY1Z8G4uw6vcDfwY4wmkbHbNb0vJrAKvap0M=
+github.com/pmatteo/friendlymongo v0.1.0 h1:8VqgiTJC8pV90dogP/qdHA+wLTRz/kRtkWuFoYLgJ4E=
+github.com/pmatteo/friendlymongo v0.1.0/go.mod h1:JvuI96ywY1Z8G4uw6vcDfwY4wmkbHbNb0vJrAKvap0M=
+github.com/pmatteo/friendlymongo v0.2.0 h1:rGAxs86Z/Vj9xmbzP3gRNabGej9JJ2riUERUKEoJqnI=
+github.com/pmatteo/friendlymongo v0.2.0/go.mod h1:JvuI96ywY1Z8G4uw6vcDfwY4wmkbHbNb0vJrAKvap0M=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
