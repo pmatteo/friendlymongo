@@ -104,27 +104,6 @@ func (pb *StageBuilder) Lookup(id, from, localField, foreignField, as string) *S
 	})
 }
 
-// TODO DOC
-type unwindOpts struct {
-	includeIndex         *string
-	preserveNullAndEmpty *bool
-}
-
-type unwindOptsFunc func(*unwindOpts)
-
-func IncludeIndex(index string) unwindOptsFunc {
-
-	return func(opts *unwindOpts) {
-		opts.includeIndex = &index
-	}
-}
-func PreserveNullEmpty(preserve bool) unwindOptsFunc {
-
-	return func(opts *unwindOpts) {
-		opts.preserveNullAndEmpty = &preserve
-	}
-}
-
 func (pb *StageBuilder) Unwind(id, fieldPath string, opts ...unwindOptsFunc) *StageBuilder {
 
 	unwind := bson.M{"path": fieldPath}
