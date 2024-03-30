@@ -21,6 +21,4 @@ code-check:
 .PHONY: test-local
 test-local:
 	docker compose up -d --build
-	go test -v -race -buildvcs -uri='mongodb://root:toor@localhost:27010' ${TEST_BASE_PATH}
-	go test -v -race -buildvcs -uri='mongodb://root:toor@localhost:27011' ${TEST_BASE_PATH}
-	go test -v -race -buildvcs -uri='mongodb://root:toor@localhost:27012' ${TEST_BASE_PATH}
+	./run_tests.sh
