@@ -1,4 +1,4 @@
-module github.com/pmatteo/friendlymongo/_example/simple
+module github.com/pmatteo/friendlymongo/_example/custom-repo
 
 replace github.com/pmatteo/friendlymongo => ../..
 
