@@ -1,5 +1,7 @@
 module github.com/pmatteo/friendlymongo/_example/simple
 
+replace github.com/pmatteo/friendlymongo => ../..
+
 go 1.22
 
 require (

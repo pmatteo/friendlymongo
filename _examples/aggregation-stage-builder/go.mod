@@ -1,5 +1,7 @@
 module github.com/pmatteo/friendlymongo/_example/aggregation-stage-builder
 
+replace github.com/pmatteo/friendlymongo => ../..
+
 go 1.22
 
 require (
