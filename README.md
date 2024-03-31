@@ -6,7 +6,6 @@ MongoDB and Golang made easy (maybe).
 
 ![GitHub Release](https://img.shields.io/github/v/release/pmatteo/friendlymongo?include_prereleases&display_name=tag&style=flat-square)
 
-
 ## Installation
 
 `go get -u github.com/pmatteo/friendlymongo`
