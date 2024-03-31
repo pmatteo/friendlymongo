@@ -4,18 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pmatteo/friendlymongo"
+	fm "github.com/pmatteo/friendlymongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func init() {
-	friendlymongo.SetInstance("mongodb://username:password@localhost:27017")
+	fm.SetInstance("mongodb://username:password@localhost:27017")
 }
 
 func main() {
+
+	// Clean up after the example
 	defer func() {
-		i := friendlymongo.GetInstance()
+		i := fm.GetInstance()
 
 		if err := i.Database("test").Drop(context.Background()); err != nil {
 			fmt.Println("Error dropping database:", err)
@@ -29,6 +31,67 @@ func main() {
 	prodRepo := newProductRepository()
 	orderRepo := newOrderRepository()
 
+	setupOrderAndProducts(prodRepo, orderRepo)
+
+	// The aggregation pipeline returns the orders with the status "paid" with their products
+	// grouped the by category
+	stages := fm.NewStageBuilder().
+		Match("status_filter", bson.M{"status": "paid"}).
+		Lookup("product_lookup", "product", "products", "ean", "products").
+		Unwind("unwind_products", "$products").
+		Group("category_id_group", bson.M{
+			"_id": bson.M{
+				"orderId":  "$_id",
+				"category": "$products.category",
+			},
+			"status":   fm.First("$status"),
+			"products": fm.Push("$products"),
+		}).
+		Group("productsByCategory", bson.M{
+			"_id":                "$_id.orderId",
+			"status":             fm.First("$status"),
+			"productsByCategory": fm.Push("category", "$_id.category", "products", "$products"),
+		}).
+		Project("final_project", bson.M{
+			"_id":    1,
+			"status": 1,
+			"grouped_products": fm.ArrayToObject(
+				fm.Map("$productsByCategory", "cat", "$$cat.category", "$$cat.products"),
+			),
+		})
+
+	var results []result
+	err := orderRepo.Aggregate(context.Background(), stages.Build(), &results)
+	if err != nil {
+		fmt.Println("Error aggregating orders:", err)
+		return
+	}
+
+	printResults(results)
+}
+
+type result struct {
+	GroupedProducts map[string][]*product `bson:"grouped_products"`
+	Status          string                `bson:"status"`
+	OrderId         primitive.ObjectID    `bson:"_id"`
+}
+
+func printResults(results []result) {
+	for _, r := range results {
+		fmt.Printf("Order ID: %s\n", r.OrderId.String())
+		fmt.Printf("Order status: %s\n", r.Status)
+		fmt.Println("Products:")
+		for cat, prods := range r.GroupedProducts {
+			fmt.Printf("\tCategory: %s\n", cat)
+			for _, p := range prods {
+				fmt.Printf("\t\t * %s: %.2f\n", p.Name, float64(p.Price)/100)
+			}
+		}
+		fmt.Println()
+	}
+}
+
+func setupOrderAndProducts(prodRepo productRepository, orderRepo orderRepository) {
 	products := []*product{
 		{
 			Name:     "Barialla Pennette Rigate",
@@ -83,60 +146,10 @@ func main() {
 		},
 	}
 	orderRepo.InsertMany(context.Background(), orders)
-
-	stages := friendlymongo.NewStageBuilder().
-		Match("status_filter", bson.M{"status": "paid"}).
-		Lookup("product_lookup", "product", "products", "ean", "products").
-		Unwind("unwind_products", "$products").
-		Group("category_id_group", bson.M{
-			"_id": bson.M{
-				"orderId":  "$_id",
-				"category": "$products.category",
-			},
-			"status":   bson.M{"$first": "$status"},
-			"products": bson.M{"$push": "$products"},
-		}).
-		Group("productsByCategory", bson.M{
-			"_id":    "$_id.orderId",
-			"status": bson.M{"$first": "$status"},
-			"productsByCategory": bson.M{"$push": bson.M{
-				"category": "$_id.category",
-				"products": "$products",
-			}},
-		}).
-		Project("final_project", bson.M{
-			"_id":    1,
-			"status": 1,
-			"grouped_products": bson.M{
-				"$arrayToObject": bson.M{
-					"$map": bson.M{
-						"input": "$productsByCategory",
-						"as":    "cat",
-						"in": bson.M{
-							"k": "$$cat.category",
-							"v": "$$cat.products",
-						},
-					},
-				},
-			},
-		})
-
-	results := []struct {
-		ProductsByCategory map[string]*product `bson:"grouped_products"`
-		Status             string              `bson:"status"`
-		Orderid            primitive.ObjectID  `bson:"_id"`
-	}{}
-	orderRepo.Aggregate(context.Background(), stages.Build(), results)
-
-	fmt.Println("Aggregation result:", results)
-
-	for _, r := range results {
-		fmt.Printf("Status: %s - Products: %v\n", r.Status, r.ProductsByCategory)
-	}
 }
 
 type product struct {
-	friendlymongo.BaseModel `bson:",inline"`
+	fm.BaseModel `bson:",inline"`
 
 	Name     string `bson:"name"`
 	Category string `bson:"category"`
@@ -144,43 +157,33 @@ type product struct {
 	Price    int    `bson:"price"`
 }
 
-// productRepository is a custom repository for the product model
-// It embeds the BaseRepository and it's used to add custom methods to the repository
-// It's not mandatory to create a custom repository, but it's a good practice to keep the code organized
-// and to avoid code duplication.
-// Alternatively, you can alias the BaseRepository and add custom methods to the alias.
 type productRepository struct {
-	*friendlymongo.BaseRepository[*product]
+	*fm.BaseRepository[*product]
 }
 
 func newProductRepository() productRepository {
-	i := friendlymongo.GetInstance()
+	i := fm.GetInstance()
 
 	return productRepository{
-		BaseRepository: friendlymongo.NewBaseRepository(i.Database("test"), "product", new(product)),
+		BaseRepository: fm.NewBaseRepository(i.Database("test"), "product", new(product)),
 	}
 }
 
 type order struct {
-	friendlymongo.BaseModel `bson:",inline"`
+	fm.BaseModel `bson:",inline"`
 
 	Products []string `bson:"products"`
 	Status   string   `bson:"status"`
 }
 
-// orderRepository is a custom repository for the order model
-// It embeds the BaseRepository and it's used to add custom methods to the repository
-// It's not mandatory to create a custom repository, but it's a good practice to keep the code organized
-// and to avoid code duplication.
-// Alternatively, you can alias the BaseRepository and add custom methods to the alias.
 type orderRepository struct {
-	*friendlymongo.BaseRepository[*order]
+	*fm.BaseRepository[*order]
 }
 
 func newOrderRepository() orderRepository {
-	i := friendlymongo.GetInstance()
+	i := fm.GetInstance()
 
 	return orderRepository{
-		BaseRepository: friendlymongo.NewBaseRepository(i.Database("test"), "order", new(order)),
+		BaseRepository: fm.NewBaseRepository(i.Database("test"), "order", new(order)),
 	}
 }
