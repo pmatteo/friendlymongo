@@ -4,7 +4,8 @@ MongoDB and Golang made easy (maybe).
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pmatteo/friendlymongo)](https://goreportcard.com/report/github.com/pmatteo/friendlymongo)
 
-[![Release](https://img.shields.io/github/v/release/pmatteo/friendlyrabbit.svg?style=flat-square)](https://github.com/pmatteo/friendlymongo/releases)
+![GitHub Release](https://img.shields.io/github/v/release/pmatteo/friendlymongo?include_prereleases&display_name=tag&style=flat-square)
+
 
 ## Installation
 
