@@ -91,12 +91,39 @@ For some basic (or even not) pipeline, `friendlymongo` implements a simple stage
 pipeline := friendlymongo.
     NewStageBuilder().
     Match("name_filter", bson.M{"name": "John"}).
-    Lookup("roles_lookup", bson.M{
-        "from":         "user_role",
-        "localField":   "_id",
-        "foreignField": "fk",
-        "as":           "role",
-    }).
+    Lookup("roles_lookup", "user_role","_id","fk","role").
     Match("filter_admin", bson.M{"role.name": "admin"}).
     Build()
+```
+
+At the moment the stage builder already implements a method for a subset of possible stages, other can be added using the `AddStage` method.
+
+### Operators
+
+`friendlymongo` offers a semplification for some mongo operators like `$push` or `$map`. More will be added in the future.
+
+```go
+fm.NewStageBuilder().
+    Lookup("product_lookup", "product", "products", "ean", "products").
+    Unwind("unwind_products", "$products").
+    Group("category_id_group", bson.M{
+        "_id": bson.M{
+            "orderId":  "$_id",
+            "category": "$products.category",
+        },
+        "status":   fm.First("$status"),
+        "products": fm.Push("$products"),
+    }).
+    Group("productsByCategory", bson.M{
+        "_id":                "$_id.orderId",
+        "status":             fm.First("$status"),
+        "productsByCategory": fm.Push("category", "$_id.category", "products", "$products"),
+    }).
+    Project("final_project", bson.M{
+        "_id":    1,
+        "status": 1,
+        "grouped_products": fm.ArrayToObject(
+            fm.Map("$productsByCategory", "cat", "$$cat.category", "$$cat.products"),
+        ),
+    })
 ```
