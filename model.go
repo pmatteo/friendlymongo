@@ -45,13 +45,11 @@ func (b *BaseModel) OnCreate() {
 
 func (b *BaseModel) OnReplace() {
 
-	b.setID(primitive.NilObjectID)
 	b.setUpdatedAt()
 }
 
 func (b *BaseModel) OnUpdate() {
 
-	b.setID(primitive.NilObjectID)
 	b.setUpdatedAt()
 }
 

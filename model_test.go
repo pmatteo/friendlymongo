@@ -42,7 +42,8 @@ func TestBaseModel_OnUpdate(t *testing.T) {
 
 	model.OnUpdate()
 
-	assert.Equal(t, primitive.NilObjectID, model.ID)
+	assert.NotEqual(t, primitive.NilObjectID, model.ID)
+	assert.Equal(t, id, model.ID)
 	assert.Equal(t, tm, model.CreatedAt)
 	assert.NotEqual(t, tm, model.UpdatedAt)
 }
@@ -64,7 +65,7 @@ func TestBaseModel_OnReplace(t *testing.T) {
 
 	model.OnReplace()
 
-	assert.Equal(t, primitive.NilObjectID, model.ID)
+	assert.Equal(t, id, model.ID)
 	assert.Equal(t, tm, model.CreatedAt)
 	assert.NotEqual(t, tm, model.UpdatedAt)
 }
@@ -147,7 +148,7 @@ func TestCustomModel_OnUpdate(t *testing.T) {
 
 	model.OnUpdate()
 
-	assert.True(t, model.ID.IsZero())
+	assert.False(t, model.ID.IsZero())
 	assert.Equal(t, createdAt, model.CreatedAt)
 	assert.NotEqual(t, updatedAt, model.UpdatedAt)
 }
@@ -164,7 +165,7 @@ func TestCustomModel_OnReplace(t *testing.T) {
 
 	model.OnReplace()
 
-	assert.True(t, model.ID.IsZero())
+	assert.False(t, model.ID.IsZero())
 	assert.Equal(t, createdAt, model.CreatedAt)
 	assert.NotEqual(t, updatedAt, model.UpdatedAt)
 }

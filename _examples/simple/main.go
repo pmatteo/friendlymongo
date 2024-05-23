@@ -20,8 +20,8 @@ type userProfile struct {
 
 func (u *userProfile) String() string {
 	return fmt.Sprintf(
-		"Name: %s, Surname: %s, Email: %s, BirthDate: %s",
-		u.Name, u.Surname, u.Email, u.BirthDate.Local().Format("2006-01-02"),
+		"ID: %s, Name: %s, Surname: %s, Email: %s, BirthDate: %s",
+		u.ID.Hex(), u.Name, u.Surname, u.Email, u.BirthDate.Local().Format("2006-01-02"),
 	)
 }
 
@@ -59,13 +59,30 @@ func main() {
 	fmt.Printf("found user %v\n", foundUser)
 
 	// Update the user
-	update := bson.M{"$set": bson.M{"name": "Jane"}}
+	update := bson.M{"$set": bson.M{"name": "updateOne bson"}}
 	updatedUser, err := repo.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("updated user %v\n", updatedUser)
+	fmt.Printf("updated user with bson %v\n", updatedUser)
+
+	foundUser.Name = "updateOne model"
+	updatedUser, err = repo.UpdateOne(context.Background(), filter, foundUser)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("updated user with model %v\n", updatedUser)
+
+	// Replace the user
+	foundUser.Name = "replace"
+	err = repo.ReplaceOne(context.Background(), filter, foundUser)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("replaced user with model %v\n", foundUser)
 
 	// Delete the user
 	deleted, err := repo.Delete(context.Background(), filter)

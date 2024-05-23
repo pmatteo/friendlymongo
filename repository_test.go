@@ -205,6 +205,7 @@ func TestReplaceOne(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, model)
+	assert.False(t, model.ID.IsZero())
 	assert.Equal(t, model.ID, found.ID)
 	assert.Equal(t, "replaced", found.Name)
 }
