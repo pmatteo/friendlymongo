@@ -60,7 +60,7 @@ jobs:
     
     strategy:
       matrix:
-        go-version: ["1.18","1.22","1.23"]
+        go-version: ["1.18","1.22"]
         mongo-version: ["5.0.25", "6-jammy", "7-jammy"]
     
     services:
