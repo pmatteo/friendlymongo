@@ -2,8 +2,7 @@ module github.com/pmatteo/friendlymongo/_example/simple
 
 replace github.com/pmatteo/friendlymongo => ../..
 
-go 1.22
-toolchain go1.24.1
+go 1.24
 
 require (
 	github.com/pmatteo/friendlymongo v0.3.0
