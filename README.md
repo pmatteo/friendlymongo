@@ -1,25 +1,42 @@
 # friendlymongo
 
-MongoDB and Golang made easy (maybe).
+> **MongoDB for Golang made easy (maybe).**
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pmatteo/friendlymongo)](https://goreportcard.com/report/github.com/pmatteo/friendlymongo)
+![GitHub Release](https://img.shields.io/github/v/release/pmatteo/friendlymongo?include_prereleases\&display_name=tag\&style=flat-square)
 
-![GitHub Release](https://img.shields.io/github/v/release/pmatteo/friendlymongo?include_prereleases&display_name=tag&style=flat-square)
+---
 
-## Installation
+## 📦 Installation
 
-`go get -u github.com/pmatteo/friendlymongo`
+```bash
+go get -u github.com/pmatteo/friendlymongo
+```
 
-Note that `friendlymongo` is tested on Go `1.18` and `1.22` using different vversion of MongoDB.
+> **Note:**
+> `friendlymongo` is tested with Go versions `1.18` and `1.22`, using different MongoDB versions.
 
-## Usage
+---
 
-You can find a simple exmaple [here](https://github.com/pmatteo/friendlymongo/tree/main/_examples/simple).
+## 🚀 Usage
 
-### Client
+A simple example is available [here](https://github.com/pmatteo/friendlymongo/tree/main/_examples/simple).
 
-`friendlymongo` has a simple way to handle mongo.Client instance as a singelton. You can set the instance using `setInstance(url)` method and then get it everywhere with `GetInstance()`.
-It uses a wrapper class called `MongoClient`, to access the client instance use `GetInstance().Client()` or to get a new mongo.Database instance use `GetInstance().Database(dbName)`.
+---
+
+### 🧩 Client
+
+`friendlymongo` provides an easy way to manage a `mongo.Client` instance as a **singleton**.
+
+* Use `SetInstance(url)` to initialize it.
+* Retrieve it anywhere using `GetInstance()`.
+
+The wrapper type `MongoClient` exposes convenient helpers:
+
+* `Client()` → returns the `mongo.Client` instance
+* `Database(dbName)` → returns a new `mongo.Database` instance
+
+#### Example
 
 ```go
 i := friendlymongo.SetInstance("mongodb://username:password@localhost:27017")
@@ -27,7 +44,7 @@ c := i.Client()
 db := i.Database("user")
 ```
 
-or
+or equivalently:
 
 ```go
 friendlymongo.SetInstance("mongodb://username:password@localhost:27017")
@@ -35,10 +52,11 @@ c := friendlymongo.GetInstance().Client()
 db := friendlymongo.GetInstance().Database("user")
 ```
 
-### Model
+---
 
-`Model` is an interface that defines a series of method that every struct must implemets to being able to be used by
-the repository implmenetation.
+### 🧱 Model
+
+The `Model` interface defines lifecycle hooks for any struct intended for repository usage.
 
 ```go
 type Model interface {
@@ -48,12 +66,16 @@ type Model interface {
 }
 ```
 
-The library also comes with a simple BaseModel whcih already handels ObjectID, created and updated timestamp that can be used.
+A convenient `BaseModel` is included, which automatically handles:
+
+* MongoDB `ObjectID`
+* `created_at` and `updated_at` timestamps
+
+#### Example
 
 ```go
 type UserProfile struct {
     *friendlymongo.BaseModel
-    // Other fields 
     Name      string
     Surname   string
     Email     string
@@ -61,46 +83,58 @@ type UserProfile struct {
 }
 ```
 
-### Repository
+---
 
-The main goal of the package is allow basic Mongo functionalities access without tons of boilarplate code.
+### 🗂 Repository
 
-The implementation of the repository pattern using go generics is a way to have some operations mapped and accessible without any effort other than define the data structure you have to deal with.
+The core purpose of `friendlymongo` is to simplify MongoDB access in Go, eliminating repetitive boilerplate.
+
+The **repository pattern** is implemented using **Go generics**, providing out-of-the-box CRUD operations for your model type.
+
+#### Example
 
 ```go
-// retrieve a BaseRepository instance fot the userProfile type
-repo := friendlymongo.NewBaseRepository(db, "userProfile", &userProfile{})
+// Retrieve a BaseRepository instance for the UserProfile type
+repo := friendlymongo.NewBaseRepository(db, "userProfile", &UserProfile{})
 
-...
+user := NewUserProfile("John", "Doe", "john.doe@test.com", birthday)
 
-user := NewUserProfile("John","Doe","john.doe@test.com",birthday)
 // Insert the user into the database
-err := repo.InsertOne(context.Background(), user)
-if err != nil {
+if err := repo.InsertOne(context.Background(), user); err != nil {
     panic(err)
 }
 ```
 
-### Pipeline Stage Builder
+---
 
-BaseRepository offers an `Aggregate` method for Mongo's aggregation pipelines feature. It requires an instance of `mongo.Pipeline` as argument.
+### 🧮 Pipeline Stage Builder
 
-For some basic (or even not) pipeline, `friendlymongo` implements a simple stage builder that ìwould help developers create their stages in a more structured way and readable way.
+`BaseRepository` provides an `Aggregate()` method that accepts a `mongo.Pipeline`.
+
+To simplify pipeline creation, `friendlymongo` includes a **stage builder** — a fluent, structured way to define aggregation stages.
+
+#### Example
 
 ```go
 pipeline := friendlymongo.
     NewStageBuilder().
     Match("name_filter", bson.M{"name": "John"}).
-    Lookup("roles_lookup", "user_role","_id","fk","role").
+    Lookup("roles_lookup", "user_role", "_id", "fk", "role").
     Match("filter_admin", bson.M{"role.name": "admin"}).
     Build()
 ```
 
-At the moment the stage builder already implements a method for a subset of possible stages, other can be added using the `AddStage` method.
+The builder includes helpers for several common stages.
+You can also add custom stages using the `AddStage()` method.
 
-### Operators
+---
 
-`friendlymongo` offers a semplification for some mongo operators like `$push` or `$map`. More will be added in the future.
+### ⚙️ Operators
+
+`friendlymongo` includes simplified helpers for some MongoDB operators such as `$push` and `$map`.
+More will be added over time.
+
+#### Example
 
 ```go
 fm.NewStageBuilder().
@@ -127,3 +161,6 @@ fm.NewStageBuilder().
         ),
     })
 ```
+
+Would you like me to make it **ready for pkg.go.dev** formatting (i.e. Markdown tuned for Go documentation sites)?
+That would adjust headings, example indentation, and link formatting for GoDoc-style readability.
