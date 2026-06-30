@@ -5,8 +5,8 @@ replace github.com/pmatteo/friendlymongo => ../..
 go 1.24.0
 
 require (
-	github.com/pmatteo/friendlymongo v0.3.0
-	go.mongodb.org/mongo-driver v1.17.6
+	github.com/pmatteo/friendlymongo v0.0.0-00010101000000-000000000000
+	go.mongodb.org/mongo-driver v1.17.9
 )
 
 require (
